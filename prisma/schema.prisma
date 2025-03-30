@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id         String   @id @default(cuid())
+  message    String
+  trackId    String
+  trackName  String
+  artistName String
+  albumArt   String?
+  hashedIp   String
+  status     Status   @default(ACTIVE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  reports    Report[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  postId    String
+  reason    String
+  hashedIp  String
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id])
+
+  @@index([status])
+  @@index([postId])
+}
+
+enum Status {
+  ACTIVE
+  PENDING
+  REMOVED
+}
+
