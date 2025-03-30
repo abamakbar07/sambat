@@ -22,9 +22,9 @@ export async function createPost(formData: FormData) {
     const validatedData = createPostSchema.parse({ message, trackId })
 
     // Get IP address for moderation purposes
-    const headersList = headers()
-    const ip = headersList.get("x-forwarded-for") || "unknown"
-    const hashedIp = hashIpAddress(ip)
+    // const headersList = headers()
+    // const ip = headersList.get("x-forwarded-for") || "unknown"
+    // const hashedIp = hashIpAddress(ip)
 
     // Fetch track details to verify it exists and store relevant info
     const trackDetails = await getTrack(trackId)
@@ -37,7 +37,7 @@ export async function createPost(formData: FormData) {
         trackName: trackDetails.name,
         artistName: trackDetails.artists[0].name,
         albumArt: trackDetails.album.images[0]?.url || "",
-        hashedIp,
+        hashedIp: "random",
       },
     })
 
@@ -70,16 +70,16 @@ export async function reportPost(formData: FormData) {
     const validatedData = reportPostSchema.parse({ postId, reason })
 
     // Get IP address for moderation purposes
-    const headersList = headers()
-    const ip = headersList.get("x-forwarded-for") || "unknown"
-    const hashedIp = hashIpAddress(ip)
+    // const headersList = headers()
+    // const ip = headersList.get("x-forwarded-for") || "unknown"
+    // const hashedIp = hashIpAddress(ip)
 
     // Create the report
     await prisma.report.create({
       data: {
         postId: validatedData.postId,
         reason: validatedData.reason,
-        hashedIp,
+        hashedIp: "random"
       },
     })
 
