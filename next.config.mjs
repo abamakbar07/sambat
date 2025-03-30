@@ -20,6 +20,14 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+    serverActions: {
+      allowedOrigins: [
+        'localhost:3000',
+        'fluffy-goldfish-j9xww6r9wpgfppvr-3000.app.github.dev',
+        'v0-sambat-2-0.vercel.app',
+        // Add any other domains you might be using
+      ],
+    },
   },
   // Allow GitHub Codespaces URLs
   async headers() {
