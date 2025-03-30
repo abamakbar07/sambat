@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "Melodic Whispers - Anonymous Song Statuses",
   description: "Share your thoughts anonymously with the perfect song",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -17,16 +17,17 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider 
+          attribute="class" 
+          defaultTheme="system" 
+          enableSystem 
+          disableTransitionOnChange
+        >
           {children}
         </ThemeProvider>
       </body>
     </html>
   )
 }
-
-
-
-import './globals.css'

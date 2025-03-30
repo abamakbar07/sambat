@@ -68,7 +68,7 @@ export default async function Home({
 }
 
 async function PostFeed({ searchParams }: { searchParams: { page?: string } }) {
-  const page = searchParams.page ? Number.parseInt(searchParams.page) : 1
+  const page = await Number(searchParams.page) || 1
   const { posts, totalPages, currentPage } = await getPosts(page)
 
   return (
