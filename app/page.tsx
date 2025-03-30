@@ -31,6 +31,7 @@ async function getPosts(page = 1, limit = 10) {
     posts: posts.map((post) => ({
       ...post,
       createdAt: formatRelativeTime(post.createdAt),
+      albumArt: post.albumArt ?? "", // Ensure albumArt is always a string
     })),
     totalPages: Math.ceil(totalPosts / limit),
     currentPage: page,
@@ -42,8 +43,6 @@ export default async function Home({
 }: {
   searchParams: { page?: string }
 }) {
-  const page = searchParams.page ? Number.parseInt(searchParams.page) : 1
-
   return (
     <main className="min-h-screen bg-background">
       <div className="container px-4 py-8 mx-auto max-w-4xl">
@@ -61,14 +60,15 @@ export default async function Home({
         </header>
 
         <Suspense fallback={<PostListSkeleton />}>
-          <PostFeed page={page} />
+          <PostFeed searchParams={searchParams} />
         </Suspense>
       </div>
     </main>
   )
 }
 
-async function PostFeed({ page }: { page: number }) {
+async function PostFeed({ searchParams }: { searchParams: { page?: string } }) {
+  const page = searchParams.page ? Number.parseInt(searchParams.page) : 1
   const { posts, totalPages, currentPage } = await getPosts(page)
 
   return (

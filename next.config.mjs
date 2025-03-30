@@ -21,6 +21,20 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  // Allow GitHub Codespaces URLs
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: process.env.GITHUB_CODESPACES ? '*.app.github.dev' : 'localhost:3000',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 mergeConfig(nextConfig, userConfig)
