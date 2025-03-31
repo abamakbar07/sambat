@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Flag, ExternalLink } from "lucide-react"
 import ReportDialog from "@/components/report-dialog"
+import SocialInteractions from "@/components/social-interactions"
 
 type Post = {
   id: string
@@ -15,9 +16,21 @@ type Post = {
   artistName: string
   albumArt: string
   createdAt: string
+  likes: { userId: string }[]
+  comments: {
+    id: string
+    content: string
+    createdAt: Date
+    user: {
+      name: string | null
+      image: string | null
+    }
+    userId: string
+  }[]
+  userId: string | null
 }
 
-export default function PostList({ posts }: { posts: Post[] }) {
+export default function PostList({ posts, currentUserId }: { posts: Post[], currentUserId?: string | null }) {
   const [reportingPostId, setReportingPostId] = useState<string | null>(null)
 
   if (posts.length === 0) {
@@ -45,7 +58,6 @@ export default function PostList({ posts }: { posts: Post[] }) {
                     className="rounded-md"
                   />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <div>
@@ -80,6 +92,15 @@ export default function PostList({ posts }: { posts: Post[] }) {
                   </div>
                 </div>
               </div>
+            </div>
+            
+            <div className="border-t">
+              <SocialInteractions
+                postId={post.id}
+                likes={post.likes}
+                comments={post.comments}
+                currentUserId={currentUserId}
+              />
             </div>
           </CardContent>
         </Card>

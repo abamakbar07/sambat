@@ -2,26 +2,51 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
-import prisma from "@/lib/db"
+import { db } from "@/lib/db"
 import PostList from "@/components/post-list"
 import { formatRelativeTime } from "@/lib/utils"
+import { auth } from "./auth"
 
 // Fetch posts with pagination
 async function getPosts(page = 1, limit = 10) {
   const skip = (page - 1) * limit
 
-  const posts = await prisma.post.findMany({
+  const posts = await db.post.findMany({
     where: {
       status: "ACTIVE",
     },
     orderBy: {
       createdAt: "desc",
     },
+    include: {
+      likes: {
+        select: {
+          userId: true,
+        },
+      },
+      comments: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          userId: true,
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
     skip,
     take: limit,
   })
 
-  const totalPosts = await prisma.post.count({
+  const totalPosts = await db.post.count({
     where: {
       status: "ACTIVE",
     },
@@ -31,7 +56,6 @@ async function getPosts(page = 1, limit = 10) {
     posts: posts.map((post) => ({
       ...post,
       createdAt: formatRelativeTime(post.createdAt),
-      albumArt: post.albumArt ?? "", // Ensure albumArt is always a string
     })),
     totalPages: Math.ceil(totalPosts / limit),
     currentPage: page,
@@ -44,53 +68,51 @@ export default async function Home({
   searchParams: { page?: string }
 }) {
   return (
-    <main className="min-h-screen bg-background">
-      <div className="container px-4 py-8 mx-auto max-w-4xl">
-        <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Melodic Whispers</h1>
-            <p className="text-muted-foreground mt-1">Share your thoughts anonymously with the perfect soundtrack</p>
-          </div>
-          <Button asChild size="lg" className="gap-2">
-            <Link href="/create">
-              <PlusCircle className="h-5 w-5" />
-              <span>New Post</span>
-            </Link>
-          </Button>
-        </header>
-
-        <Suspense fallback={<PostListSkeleton />}>
-          <PostFeed searchParams={searchParams} />
-        </Suspense>
+    <div className="container max-w-4xl px-4 py-8 mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Music Feed</h1>
+        <Button asChild>
+          <Link href="/create" className="flex items-center gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Share a song
+          </Link>
+        </Button>
       </div>
-    </main>
+
+      <Suspense fallback={<PostListSkeleton />}>
+        <PostFeed searchParams={searchParams} />
+      </Suspense>
+    </div>
   )
 }
 
 async function PostFeed({ searchParams }: { searchParams: { page?: string } }) {
-  const page = await Number(searchParams.page) || 1
+  const page = searchParams.page ? parseInt(searchParams.page) : 1
   const { posts, totalPages, currentPage } = await getPosts(page)
+  const session = await auth()
 
   return (
-    <>
-      <PostList posts={posts} />
-
+    <div className="space-y-6">
+      <PostList posts={posts} currentUserId={session?.user?.id} />
+      
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-8">
-          {currentPage > 1 && (
-            <Button variant="outline" asChild>
-              <Link href={`/?page=${currentPage - 1}`}>Previous</Link>
-            </Button>
-          )}
-
-          {currentPage < totalPages && (
-            <Button variant="outline" asChild>
-              <Link href={`/?page=${currentPage + 1}`}>Next</Link>
-            </Button>
-          )}
+        <div className="flex justify-center gap-2">
+          {[...Array(totalPages)].map((_, i) => (
+            <Link
+              key={i + 1}
+              href={`/?page=${i + 1}`}
+              className={`px-4 py-2 rounded ${
+                currentPage === i + 1
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80"
+              }`}
+            >
+              {i + 1}
+            </Link>
+          ))}
         </div>
       )}
-    </>
+    </div>
   )
 }
 

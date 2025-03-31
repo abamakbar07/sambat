@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
-import prisma from "@/lib/db"
+import { db } from "@/lib/db"
 import { hashIpAddress } from "@/lib/utils"
 import { getTrack } from "@/lib/spotify"
+import { auth } from "./auth"
 import { z } from "zod"
 
 // Validation schema for creating a post
@@ -21,23 +22,21 @@ export async function createPost(formData: FormData) {
 
     const validatedData = createPostSchema.parse({ message, trackId })
 
-    // Get IP address for moderation purposes
-    // const headersList = headers()
-    // const ip = headersList.get("x-forwarded-for") || "unknown"
-    // const hashedIp = hashIpAddress(ip)
+    // Get current user
+    const session = await auth()
 
     // Fetch track details to verify it exists and store relevant info
     const trackDetails = await getTrack(trackId)
 
     // Create the post
-    await prisma.post.create({
+    await db.post.create({
       data: {
         message: validatedData.message,
         trackId: validatedData.trackId,
         trackName: trackDetails.name,
         artistName: trackDetails.artists[0].name,
         albumArt: trackDetails.album.images[0]?.url || "",
-        hashedIp: "random",
+        userId: session?.user?.id || null,
       },
     })
 
