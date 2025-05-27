@@ -10,6 +10,7 @@ datasource db {
 model Post {
   id         String   @id @default(cuid())
   message    String
+  authorName String? // Added field
   trackId    String
   trackName  String
   artistName String
@@ -43,4 +44,3 @@ enum Status {
   PENDING
   REMOVED
 }
-

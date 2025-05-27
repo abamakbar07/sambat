@@ -1,19 +1,36 @@
-import { Suspense } from "react"
+import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { PlusCircle } from "lucide-react"
 import prisma from "@/lib/db"
 import PostList from "@/components/post-list"
 import { formatRelativeTime } from "@/lib/utils"
+import { useDebounce } from "@/hooks/use-debounce"
+import { useRouter, usePathname, useSearchParams as useNextSearchParams } from "next/navigation" // Renamed to avoid conflict
+import type { Prisma } from "@prisma/client" // Import Prisma type
 
-// Fetch posts with pagination
-async function getPosts(page = 1, limit = 10) {
+// Fetch posts with pagination and search
+async function getPosts(page = 1, limit = 10, searchQuery?: string) {
   const skip = (page - 1) * limit
 
+  const whereClause: Prisma.PostWhereInput = { status: "ACTIVE" }
+  if (searchQuery && searchQuery.trim() !== "") {
+    whereClause.AND = [
+      // ...(whereClause.AND || []), // Not strictly needed here as we are initializing it
+      {
+        OR: [
+          { message: { contains: searchQuery, mode: 'insensitive' } },
+          { trackName: { contains: searchQuery, mode: 'insensitive' } },
+          { artistName: { contains: searchQuery, mode: 'insensitive' } },
+          { authorName: { contains: searchQuery, mode: 'insensitive' } },
+        ],
+      },
+    ]
+  }
+
   const posts = await prisma.post.findMany({
-    where: {
-      status: "ACTIVE",
-    },
+    where: whereClause,
     orderBy: {
       createdAt: "desc",
     },
@@ -21,17 +38,14 @@ async function getPosts(page = 1, limit = 10) {
     take: limit,
   })
 
-  const totalPosts = await prisma.post.count({
-    where: {
-      status: "ACTIVE",
-    },
-  })
+  const totalPosts = await prisma.post.count({ where: whereClause })
 
   return {
     posts: posts.map((post) => ({
       ...post,
       createdAt: formatRelativeTime(post.createdAt),
-      albumArt: post.albumArt ?? "", // Ensure albumArt is always a string
+      albumArt: post.albumArt ?? "",
+      authorName: post.authorName ?? undefined,
     })),
     totalPages: Math.ceil(totalPosts / limit),
     currentPage: page,
@@ -41,7 +55,7 @@ async function getPosts(page = 1, limit = 10) {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { page?: string }
+  searchParams: { page?: string; query?: string }
 }) {
   return (
     <main className="min-h-screen bg-background">
@@ -59,17 +73,73 @@ export default async function Home({
           </Button>
         </header>
 
-        <Suspense fallback={<PostListSkeleton />}>
-          <PostFeed searchParams={searchParams} />
-        </Suspense>
+        <PostSearchAndFeedClient searchParams={searchParams} />
       </div>
     </main>
   )
 }
 
-async function PostFeed({ searchParams }: { searchParams: { page?: string } }) {
-  const page = await Number(searchParams.page) || 1
-  const { posts, totalPages, currentPage } = await getPosts(page)
+// Client component to manage search state and display feed
+function PostSearchAndFeedClient({ searchParams }: { searchParams: { page?: string; query?: string } }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const currentNextSearchParams = useNextSearchParams() // Using the renamed import
+
+  const initialQuery = searchParams.query || ""
+  const [searchTerm, setSearchTerm] = useState(initialQuery)
+  const debouncedSearchTerm = useDebounce(searchTerm, 500)
+
+  useEffect(() => {
+    const params = new URLSearchParams(currentNextSearchParams.toString())
+    if (debouncedSearchTerm) {
+      params.set("query", debouncedSearchTerm)
+    } else {
+      params.delete("query")
+    }
+
+    // Reset page to 1 only if the debounced search term has actually changed the query parameter
+    // or if a query existed and is now cleared.
+    const currentQueryParam = currentNextSearchParams.get("query")
+    if (debouncedSearchTerm !== (currentQueryParam || "")) {
+        params.delete("page");
+    }
+
+    router.replace(`${pathname}?${params.toString()}`)
+  }, [debouncedSearchTerm, initialQuery, pathname, router, currentNextSearchParams])
+
+
+  return (
+    <div>
+      <Input
+        type="text"
+        placeholder="Search posts by message, song, artist, or author..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-6 w-full"
+      />
+      <Suspense fallback={<PostListSkeleton />}>
+        <PostFeed searchParams={searchParams} />
+      </Suspense>
+    </div>
+  )
+}
+
+
+async function PostFeed({ searchParams }: { searchParams: { page?: string; query?: string } }) {
+  const page = Number(searchParams?.page) || 1
+  const query = searchParams?.query || ""
+  const { posts, totalPages, currentPage } = await getPosts(page, 10, query)
+
+  const createPageURL = (newPage: number) => {
+    const params = new URLSearchParams(searchParams ? new URLSearchParams(searchParams as any).toString() : "")
+    params.set("page", String(newPage))
+    if (query) {
+      params.set("query", query)
+    } else {
+      params.delete("query")
+    }
+    return `/?${params.toString()}`
+  }
 
   return (
     <>
@@ -79,13 +149,13 @@ async function PostFeed({ searchParams }: { searchParams: { page?: string } }) {
         <div className="flex justify-center gap-2 mt-8">
           {currentPage > 1 && (
             <Button variant="outline" asChild>
-              <Link href={`/?page=${currentPage - 1}`}>Previous</Link>
+              <Link href={createPageURL(currentPage - 1)}>Previous</Link>
             </Button>
           )}
 
           {currentPage < totalPages && (
             <Button variant="outline" asChild>
-              <Link href={`/?page=${currentPage + 1}`}>Next</Link>
+              <Link href={createPageURL(currentPage + 1)}>Next</Link>
             </Button>
           )}
         </div>
@@ -113,4 +183,3 @@ function PostListSkeleton() {
     </div>
   )
 }
-

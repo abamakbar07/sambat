@@ -14,6 +14,7 @@ type Post = {
   trackName: string
   artistName: string
   albumArt: string
+  authorName?: string;
   createdAt: string
 }
 
@@ -56,7 +57,9 @@ export default function PostList({ posts }: { posts: Post[] }) {
                   </div>
 
                   <p className="mt-2 break-words">{post.message}</p>
-
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Posted by: {post.authorName && post.authorName.trim() !== "" ? post.authorName : "Anonymous"}
+                  </p>
                   <div className="flex justify-between items-center mt-4">
                     <a
                       href={`https://open.spotify.com/track/${post.trackId}`}

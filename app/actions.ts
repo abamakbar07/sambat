@@ -11,6 +11,7 @@ import { z } from "zod"
 const createPostSchema = z.object({
   message: z.string().min(1).max(280),
   trackId: z.string().min(1),
+  authorName: z.string().max(50).optional(),
 })
 
 export async function createPost(formData: FormData) {
@@ -18,8 +19,9 @@ export async function createPost(formData: FormData) {
     // Get and validate form data
     const message = formData.get("message") as string
     const trackId = formData.get("trackId") as string
+    const authorName = formData.get("authorName") as string | null
 
-    const validatedData = createPostSchema.parse({ message, trackId })
+    const validatedData = createPostSchema.parse({ message, trackId, authorName })
 
     // Get IP address for moderation purposes
     // const headersList = headers()
@@ -30,16 +32,18 @@ export async function createPost(formData: FormData) {
     const trackDetails = await getTrack(trackId)
 
     // Create the post
-    await prisma.post.create({
-      data: {
-        message: validatedData.message,
-        trackId: validatedData.trackId,
-        trackName: trackDetails.name,
-        artistName: trackDetails.artists[0].name,
-        albumArt: trackDetails.album.images[0]?.url || "",
-        hashedIp: "random",
-      },
-    })
+    const postData: any = {
+      message: validatedData.message,
+      trackId: validatedData.trackId,
+      trackName: trackDetails.name,
+      artistName: trackDetails.artists[0].name,
+      albumArt: trackDetails.album.images[0]?.url || "",
+      hashedIp: "random", // This will be addressed later if necessary
+    };
+    if (validatedData.authorName) {
+      postData.authorName = validatedData.authorName;
+    }
+    await prisma.post.create({ data: postData });
 
     revalidatePath("/")
     return { success: true }

@@ -19,6 +19,7 @@ export default function CreatePost() {
   const router = useRouter()
   const { toast } = useToast()
   const [message, setMessage] = useState("")
+  const [authorName, setAuthorName] = useState("")
   const [selectedTrack, setSelectedTrack] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -48,6 +49,9 @@ export default function CreatePost() {
     const formData = new FormData()
     formData.append("message", message)
     formData.append("trackId", selectedTrack.id)
+    if (authorName && authorName.trim() !== "") {
+      formData.append("authorName", authorName.trim());
+    }
 
     const result = await createPost(formData)
 
@@ -80,7 +84,7 @@ export default function CreatePost() {
       <Card>
         <CardHeader>
           <CardTitle>Create a new post</CardTitle>
-          <CardDescription>Share your thoughts anonymously with a song that matches your mood</CardDescription>
+          <CardDescription>Share your thoughts with a song that matches your mood. Your name is optional.</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -96,6 +100,17 @@ export default function CreatePost() {
                 maxLength={280}
               />
               <div className="text-xs text-muted-foreground text-right">{message.length}/280</div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="authorName">Your name (optional)</Label>
+              <Input
+                id="authorName"
+                placeholder="Your name"
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                maxLength={50}
+              />
             </div>
 
             {selectedTrack ? (
@@ -119,7 +134,7 @@ export default function CreatePost() {
                   Posting...
                 </>
               ) : (
-                <>Share anonymously</>
+                <>Share</>
               )}
             </Button>
           </CardFooter>
