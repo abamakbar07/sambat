@@ -13,14 +13,12 @@ interface PostFeedProps {
 
 interface PostSearchAndFeedClientProps {
   searchParams: { page?: string; query?: string };
-  PostFeedComponent: ComponentType<PostFeedProps>;
-  PostListSkeletonComponent: ComponentType<any>; // Use any for skeleton if props are minimal/none
+  children: React.ReactNode;
 }
 
 export default function PostSearchAndFeedClient({
   searchParams,
-  PostFeedComponent,
-  PostListSkeletonComponent,
+  children,
 }: PostSearchAndFeedClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -53,9 +51,7 @@ export default function PostSearchAndFeedClient({
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-6 w-full"
       />
-      <Suspense fallback={<PostListSkeletonComponent />}>
-        <PostFeedComponent searchParams={searchParams} />
-      </Suspense>
+      {children}
     </div>
   );
 }

@@ -134,11 +134,11 @@ export default async function Home({
           </Button>
         </header>
 
-        <PostSearchAndFeedClient
-          searchParams={searchParams}
-          PostFeedComponent={PostFeed}
-          PostListSkeletonComponent={PostListSkeleton}
-        />
+        <PostSearchAndFeedClient searchParams={searchParams}>
+          <Suspense fallback={<PostListSkeleton />}>
+            <PostFeed searchParams={searchParams} />
+          </Suspense>
+        </PostSearchAndFeedClient>
       </div>
     </main>
   )
