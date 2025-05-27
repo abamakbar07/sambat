@@ -1,23 +1,22 @@
-import { Suspense, useState, useEffect } from "react"
+import { Suspense } from "react" // Suspense is kept as it's used directly in Home
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+// Input removed as it's now in PostSearchAndFeedClient
 import { PlusCircle } from "lucide-react"
 import prisma from "@/lib/db"
 import PostList from "@/components/post-list"
 import { formatRelativeTime } from "@/lib/utils"
-import { useDebounce } from "@/hooks/use-debounce"
-import { useRouter, usePathname, useSearchParams as useNextSearchParams } from "next/navigation" // Renamed to avoid conflict
-import type { Prisma } from "@prisma/client" // Import Prisma type
+// useDebounce, useRouter, usePathname, useSearchParams, useState, useEffect removed
+import type { Prisma } from "@prisma/client"
+import PostSearchAndFeedClient from "@/components/post-search-and-feed" // Import the new component
 
-// Fetch posts with pagination and search
+// Fetch posts with pagination and search (remains unchanged)
 async function getPosts(page = 1, limit = 10, searchQuery?: string) {
   const skip = (page - 1) * limit
 
   const whereClause: Prisma.PostWhereInput = { status: "ACTIVE" }
   if (searchQuery && searchQuery.trim() !== "") {
     whereClause.AND = [
-      // ...(whereClause.AND || []), // Not strictly needed here as we are initializing it
       {
         OR: [
           { message: { contains: searchQuery, mode: 'insensitive' } },
@@ -52,79 +51,7 @@ async function getPosts(page = 1, limit = 10, searchQuery?: string) {
   }
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: { page?: string; query?: string }
-}) {
-  return (
-    <main className="min-h-screen bg-background">
-      <div className="container px-4 py-8 mx-auto max-w-4xl">
-        <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Melodic Whispers</h1>
-            <p className="text-muted-foreground mt-1">Share your thoughts anonymously with the perfect soundtrack</p>
-          </div>
-          <Button asChild size="lg" className="gap-2">
-            <Link href="/create">
-              <PlusCircle className="h-5 w-5" />
-              <span>New Post</span>
-            </Link>
-          </Button>
-        </header>
-
-        <PostSearchAndFeedClient searchParams={searchParams} />
-      </div>
-    </main>
-  )
-}
-
-// Client component to manage search state and display feed
-function PostSearchAndFeedClient({ searchParams }: { searchParams: { page?: string; query?: string } }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const currentNextSearchParams = useNextSearchParams() // Using the renamed import
-
-  const initialQuery = searchParams.query || ""
-  const [searchTerm, setSearchTerm] = useState(initialQuery)
-  const debouncedSearchTerm = useDebounce(searchTerm, 500)
-
-  useEffect(() => {
-    const params = new URLSearchParams(currentNextSearchParams.toString())
-    if (debouncedSearchTerm) {
-      params.set("query", debouncedSearchTerm)
-    } else {
-      params.delete("query")
-    }
-
-    // Reset page to 1 only if the debounced search term has actually changed the query parameter
-    // or if a query existed and is now cleared.
-    const currentQueryParam = currentNextSearchParams.get("query")
-    if (debouncedSearchTerm !== (currentQueryParam || "")) {
-        params.delete("page");
-    }
-
-    router.replace(`${pathname}?${params.toString()}`)
-  }, [debouncedSearchTerm, initialQuery, pathname, router, currentNextSearchParams])
-
-
-  return (
-    <div>
-      <Input
-        type="text"
-        placeholder="Search posts by message, song, artist, or author..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="mb-6 w-full"
-      />
-      <Suspense fallback={<PostListSkeleton />}>
-        <PostFeed searchParams={searchParams} />
-      </Suspense>
-    </div>
-  )
-}
-
-
+// PostFeed component remains in this file as it's a server component
 async function PostFeed({ searchParams }: { searchParams: { page?: string; query?: string } }) {
   const page = Number(searchParams?.page) || 1
   const query = searchParams?.query || ""
@@ -164,6 +91,7 @@ async function PostFeed({ searchParams }: { searchParams: { page?: string; query
   )
 }
 
+// PostListSkeleton component remains in this file
 function PostListSkeleton() {
   return (
     <div className="space-y-4">
@@ -181,5 +109,37 @@ function PostListSkeleton() {
         </div>
       ))}
     </div>
+  )
+}
+
+// Home component now uses the imported PostSearchAndFeedClient
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { page?: string; query?: string }
+}) {
+  return (
+    <main className="min-h-screen bg-background">
+      <div className="container px-4 py-8 mx-auto max-w-4xl">
+        <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Melodic Whispers</h1>
+            <p className="text-muted-foreground mt-1">Share your thoughts anonymously with the perfect soundtrack</p>
+          </div>
+          <Button asChild size="lg" className="gap-2">
+            <Link href="/create">
+              <PlusCircle className="h-5 w-5" />
+              <span>New Post</span>
+            </Link>
+          </Button>
+        </header>
+
+        <PostSearchAndFeedClient
+          searchParams={searchParams}
+          PostFeedComponent={PostFeed}
+          PostListSkeletonComponent={PostListSkeleton}
+        />
+      </div>
+    </main>
   )
 }
