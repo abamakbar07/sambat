@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react" // Added useState, useEffe
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
-import { db } from "@/lib/db" // db import might be problematic in client component if getPosts is moved/changed
+import db from "@/lib/db" // Changed to default import
 import PostList from "@/components/post-list"
 import PostSearch from "@/components/post-search" // Import PostSearch
 import { formatRelativeTime } from "@/lib/utils"

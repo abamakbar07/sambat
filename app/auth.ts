@@ -1,5 +1,5 @@
 import NextAuth from "next-auth"
-import { db } from "@/lib/db"
+import db from "@/lib/db" // Changed to default import
 import Google from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"

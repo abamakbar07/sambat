@@ -1,4 +1,4 @@
-import { db } from "@/lib/db"
+import db from "@/lib/db" // Changed to default import
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { z } from "zod"

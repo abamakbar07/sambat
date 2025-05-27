@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { db } from "@/lib/db"
+import db from "@/lib/db" // Changed to default import
 import { auth } from "@/app/auth"
 
 export async function toggleLike(postId: string) {

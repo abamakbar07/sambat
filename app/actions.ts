@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
-import { db } from "@/lib/db"
+import db from "@/lib/db" // Changed to default import
 import { hashIpAddress } from "@/lib/utils"
 import { getTrack } from "@/lib/spotify"
 import { auth } from "./auth"
@@ -74,7 +74,7 @@ export async function reportPost(formData: FormData) {
     // const hashedIp = hashIpAddress(ip)
 
     // Create the report
-    await prisma.report.create({
+    await db.report.create({ // Changed prisma.report.create to db.report.create
       data: {
         postId: validatedData.postId,
         reason: validatedData.reason,
