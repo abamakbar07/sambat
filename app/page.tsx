@@ -19,6 +19,12 @@ async function getPosts(page = 1, limit = 10) {
       createdAt: "desc",
     },
     include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
       likes: {
         select: {
           userId: true,
