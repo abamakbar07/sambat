@@ -71,3 +71,4 @@ export default function Header({ user }: HeaderProps) {
       </div>
     </header>
   )
+}
