@@ -1,5 +1,5 @@
 import NextAuth from "next-auth"
-import { db } from "@/lib/db"
+import { prisma as db } from "@/lib/db"
 import Google from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"

@@ -16,6 +16,10 @@ type Post = {
   artistName: string
   albumArt: string
   createdAt: string
+  user: { // This is the post author
+    name: string | null;
+    image: string | null;
+  } | null; // The user can be null if userId is null
   likes: { userId: string }[]
   comments: {
     id: string
